@@ -1,4 +1,4 @@
-# Loading the Dataset-----------------------------------------------------------
+# Loading Dataset -------------------------------------------------------------
 
 school_perform <- as_tibble(read.csv2('TX RENDIMENTO MUNICIPIOS 2010_2.csv',
                                      dec = '.',sep=';', stringsAsFactors = F))
@@ -156,7 +156,7 @@ evasi_sector_list <- list('elemen' = evasi_elemen_sector, 'high'
                          = evasi_high_sector, 'all' = evasi_sector)
 
 # Making a object prototype, with all necessary cases
-level_school <- list('elemen' = NA, 'high' = NA, 'all' = NA)
+level_school <- list('elemen' = tibble(), 'high' = tibble(), 'all' = tibble())
 object_prototype <- list('approv' = list('cit' = level_school, 
                                          'local' = level_school, 
                                          'sector' = level_school), 
@@ -205,6 +205,10 @@ for(k in 1:length(df_list)){
                              df_list[[k]][[j]][[i]])/2)]
       
       df_list_meta[[k]][[j]][[i]] <- df_list[[k]][[j]][[i]][,c(1:7)]
+      
+      df_list_meta[[k]][[j]][[i]][,] <- lapply(df_list_meta[[k]][[j]][[i]][,],
+                                               FUN = as.factor)
+      
       df_list[[k]][[j]][[i]] <- df_list[[k]][[j]][[i]][,-c(1:7)]
     
     }
@@ -241,7 +245,7 @@ rm(nb)
 # Analyzing data --------------------------------------------------------------
 
 # Chart correlation (example)
-chart.Correlation(df_list$evasi$cit$all, histogram = T)
+# chart.Correlation(df_list$evasi$cit$all, histogram = T)
 
 # Calculating correlation matrix
 rho <- object_prototype
@@ -256,24 +260,24 @@ for(k in 1:length(df_list)){
 }
 
 # Heatmap - correlation (example)
-rho$approv$cit$all %>% 
-  melt() %>% 
-  ggplot() +
-  geom_tile(aes(x = Var1, y = Var2, fill = value)) +
-  geom_text(aes(x = Var1, y = Var2, label = round(x = value, digits = 3)),
-            size = 4) +
-  labs(x = NULL,
-       y = NULL,
-       fill = "Correlações") +
-  scale_fill_gradient2(low = "dodgerblue4", 
-                       mid = "white", 
-                       high = "brown4",
-                       midpoint = 0) +
-  theme(panel.background = element_rect("white"),
-        panel.grid = element_line("grey95"),
-        panel.border = element_rect(NA),
-        legend.position = "bottom",
-        axis.text.x = element_text(angle = 0))
+# rho$approv$cit$all %>% 
+#   melt() %>% 
+#   ggplot() +
+#   geom_tile(aes(x = Var1, y = Var2, fill = value)) +
+#   geom_text(aes(x = Var1, y = Var2, label = round(x = value, digits = 3)),
+#             size = 4) +
+#   labs(x = NULL,
+#        y = NULL,
+#        fill = "Correlações") +
+#   scale_fill_gradient2(low = "dodgerblue4", 
+#                        mid = "white", 
+#                        high = "brown4",
+#                        midpoint = 0) +
+#   theme(panel.background = element_rect("white"),
+#         panel.grid = element_line("grey95"),
+#         panel.border = element_rect(NA),
+#         legend.position = "bottom",
+#         axis.text.x = element_text(angle = 0))
 
 
 # Bartlett test of sphericity - homogeneity of variances ----------------------
@@ -312,7 +316,8 @@ for(k in 1:length(df_list)){
   
   for(j in 1:length(df_list$approv)){
     
-    pca_list[[k]][[j]] <- lapply(df_list[[k]][[j]], FUN = prcomp, scale. = TRUE)
+    pca_list[[k]][[j]] <- lapply(df_list[[k]][[j]], FUN = prcomp, 
+                                        scale. = TRUE)
     
   }
   
@@ -338,19 +343,19 @@ for(k in 1:length(df_list)){
 }
 
 # Variables weights - plot example
-ggplotly(
-  data.frame(pca_list$approv$cit$all$rotation) %>% 
-    mutate(var = names(data.frame(df_list$approv$cit$all))) %>% 
-    melt(id.vars = 'var') %>% 
-    mutate(var = factor(var)) %>% 
-    ggplot(aes(x = var, y = value, fill = var))+
-    geom_bar(stat = 'identity', color = 'black')+
-    facet_wrap(~variable)+
-    labs(x=NULL, y=NULL, fill = 'Legend:',)+
-    scale_fill_viridis_d()+
-    theme_bw()+
-    theme(axis.text.x = element_text(angle = 90))
-)
+# ggplotly(
+#   data.frame(pca_list$approv$cit$all$rotation) %>% 
+#     mutate(var = names(data.frame(df_list$approv$cit$all))) %>% 
+#     melt(id.vars = 'var') %>% 
+#     mutate(var = factor(var)) %>% 
+#     ggplot(aes(x = var, y = value, fill = var))+
+#     geom_bar(stat = 'identity', color = 'black')+
+#     facet_wrap(~variable)+
+#     labs(x=NULL, y=NULL, fill = 'Legend:',)+
+#     scale_fill_viridis_d()+
+#     theme_bw()+
+#     theme(axis.text.x = element_text(angle = 90))
+# )
 
 
 # Choosing the number of Principal Components ---------------------------------
@@ -358,13 +363,13 @@ ggplotly(
 # Kaiser rule - eigenvalues > 1
 
 # Scree Plot
-ggplotly(
-  fviz_eig(X = pca_list$approv$cit$all,
-           ggtheme = theme_bw(), 
-           barcolor = "black", 
-           barfill = "dodgerblue4",
-           linecolor = "darkgoldenrod4")
-)
+# ggplotly(
+#   fviz_eig(X = pca_list$approv$cit$all,
+#            ggtheme = theme_bw(), 
+#            barcolor = "black", 
+#            barfill = "dodgerblue4",
+#            linecolor = "darkgoldenrod4")
+# )
 
 
 # Factor loading --------------------------------------------------------------
@@ -385,27 +390,27 @@ for(k in 1:length(df_list)){
 }
 
 # Report plot - example
-data.frame(factor_loading$approv$cit$all) %>%
-  rename(F1 = X1, F2 = X2, F3 = X3, F4 = X4, F5 = X5, F6 = X6, F7 = X7,
-         F8 = X8, F9 = X9, F10 = X10, F11 = X11, F12 = X12) %>%
-  mutate(Comunalidades = rowSums(factor_loading$approv$cit$all^2)) %>% 
-  kable() %>%
-  kable_styling(bootstrap_options = 'striped',
-                full_width = T,
-                font_size = 12)
+# data.frame(factor_loading$approv$cit$all) %>%
+#   rename(F1 = X1, F2 = X2, F3 = X3, F4 = X4, F5 = X5, F6 = X6, F7 = X7,
+#          F8 = X8, F9 = X9, F10 = X10, F11 = X11, F12 = X12) %>%
+#   mutate(Comunalidades = rowSums(factor_loading$approv$cit$all^2)) %>% 
+#   kable() %>%
+#   kable_styling(bootstrap_options = 'striped',
+#                 full_width = T,
+#                 font_size = 12)
 
 # Ploting factor loadings - example
-data.frame(factor_loading$approv$cit$all) %>% 
-  rename(F1 = X1, F2 = X2) %>% 
-  ggplot(aes(x = F1, y = F2))+
-  geom_point(color = 'dodgerblue4') +
-  geom_hline(yintercept = 0, color = 'darkorchid')+
-  geom_vline(xintercept = 0,color = 'darkorchid')+
-  geom_text_repel(label = row.names(factor_loading$approv$cit$all))+
-  labs(x='F1', y= 'F2')+
-  theme_bw()
+# data.frame(factor_loading$approv$cit$all) %>%
+#   rename(F1 = X1, F2 = X2) %>%
+#   ggplot(aes(x = F1, y = F2))+
+#   geom_point(color = 'dodgerblue4') +
+#   geom_hline(yintercept = 0, color = 'darkorchid')+
+#   geom_vline(xintercept = 0,color = 'darkorchid')+
+#   geom_text_repel(label = row.names(factor_loading$approv$cit$all))+
+#   labs(x='F1', y= 'F2')+
+#   theme_bw()
 
-# Factor scores ---------------------------------------------------------------
+# Factor scores (for eigenvalue >= 1) -----------------------------------------
 
 factor_scores <- object_prototype
 
@@ -414,94 +419,43 @@ for(k in 1:length(df_list)){
   for(j in 1:length(df_list$approv)){
     
     for(i in 1:length(df_list$approv$cit)){
-      
+    
       factor_scores[[k]][[j]][[i]] <- t(pca_list[[k]][[j]][[i]]$rotation)/
-        pca_list[[k]][[j]][[i]]$sdev
+        (pca_list[[k]][[j]][[i]]$sdev)
       
     }
   }
 }
 
+# Including PCs on the original Dataset ---------------------------------------
 
-# Including PCs on the DF -----------------------------------------------------
-
-# Separating just the PCs used for this analysis
-
-approv_cit_fact = approv_local_fact = approv_sector_fact = evasi_cit_fact =
-  evasi_local_fact = evasi_sector_fact <- 
-  list('elemen' = list(F1 = NA, F2 = NA, F3 = NA, F4 = NA, F5 = NA,
-                                 F6 = NA, F7 = NA, F8 = NA, F9 = NA),
-       'high' = list(F1 = NA, F2 = NA, F3 = NA),
-       'all' = list(F1 = NA, F2 = NA, F3 = NA, F4 = NA, F5 = NA,
-                          F6 = NA, F7 = NA, F8 = NA, F9 = NA, F10 = NA,
-                          F11 = NA, F12 = NA))
-
-const <- c(1:6)
-
-if(i == 1 & all(factor_scores$fs_approv_cit[[j]][i,]<0)){
-  const <- -1
-} else{
-  const <- 1
-}
-factor_scores$approv$cit$elemen
-
-for(j in 1:length(approv_cit_fact)) {
+for(k in 1:length(df_list)){
   
-  for(i in 1:length(approv_cit_fact[[j]])) {
+  for(j in 1:length(df_list$approv)){
     
-  # Approved
-  approv_cit_fact[[j]][[i]] <- (rowSums(t(apply(scale(approv_cit_list[[j]]),
-                                MARGIN = 1, function(x) 
-                                x*t(factor_scores$fs_approv_cit[[j]][i,])))))
-  
-  approv_local_fact[[j]][[i]] <- rowSums(t(apply(scale(approv_local_list[[j]]),
-                                  MARGIN = 1, function(x) 
-                                  x*t(factor_scores$fs_approv_local[[j]][i,]))))
-  
-  approv_sector_fact[[j]][[i]] <- rowSums(t(apply(scale(approv_sector_list[[j]]),
-                                  MARGIN = 1, function(x) 
-                                  x*t(factor_scores$fs_approv_sector[[j]][i,]))))
-  
-  # Evasion
-  evasi_cit_fact[[j]][[i]] <- rowSums(t(apply(scale(evasi_cit_list[[j]]),
-                                  MARGIN = 1, function(x) 
-                                  x*t(factor_scores$fs_evasi_cit[[j]][i,]))))
-  
-  evasi_local_fact[[j]][[i]] <- rowSums(t(apply(scale(evasi_local_list[[j]]),
-                                  MARGIN = 1, function(x) 
-                                  x*t(factor_scores$fs_evasi_local[[j]][i,]))))
-  
-  
-  evasi_sector_fact[[j]][[i]] <- rowSums(t(apply(scale(evasi_sector_list[[j]]),
-                                  MARGIN = 1, function(x) 
-                                  x*t(factor_scores$fs_evasi_sector[[j]][i,]))))
-  
+    for(i in 1:length(df_list$approv$cit)){
+      
+      principal_components <- scale(df_list[[k]][[j]][[i]]) %*% 
+        t(factor_scores[[k]][[j]][[i]])[,(pca_list[[k]][[j]][[i]]$sdev^2>=1)]
+      
+      weight_principal_components <- ((pca_list[[k]][[j]][[i]]$sdev^2)/
+        sum(pca_list[[k]][[j]][[i]]$sdev^2))[(pca_list[[k]][[j]][[i]]$sdev^2>=1)]
+      
+      df_list[[k]][[j]][[i]] <- arrange(data.frame(cbind(
+        df_list_meta[[k]][[j]][[i]], df_list[[k]][[j]][[i]], 
+          principal_components, ranking = rowSums(principal_components %*% 
+            diag(weight_principal_components,
+              nrow = length(weight_principal_components))))), desc(ranking))
+
+    }
   }
-  
 }
 
-# Building a ranking ----------------------------------------------------------
 
-# Multiplying F1 for -1 (big numbers are associated with the minus signal)
-F1 <- data.frame(F1) %>% 
-  mutate(factor1 = rowSums(.)*-1)
+# Saving the results of ranking -------------------------------------------
 
-F2 <- data.frame(F2) %>% 
-  mutate(factor2 = rowSums(.)*1)
+save(df_list, file = 'ranking_results.RData')
 
-aprovacao_fundamental['factor1'] <- F1$factor1
-aprovacao_fundamental['factor2'] <- F2$factor2
-
-# Sum of weighted PCs 
-aprovacao_fundamental %>% 
-  mutate(pontuation = factor1 * report$var_shared[1] + 
-           factor2 * report$var_shared[2]) -> aprovacao_fundamental
-
-aprovacao_fundamental %>% 
-  arrange(desc(pontuation)) %>% 
-  kable() %>% 
-  kable_styling(bootstrap_options = 'striped',
-              full_width = T, font_size = 12)
 
 install.packages('rgdal')
 library('rgdal')
